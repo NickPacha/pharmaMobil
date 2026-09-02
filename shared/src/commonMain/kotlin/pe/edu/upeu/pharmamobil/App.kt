@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
@@ -39,6 +38,7 @@ import kotlinx.coroutines.launch
 import pe.edu.upeu.pharmamobil.navigation.Screen
 import pe.edu.upeu.pharmamobil.presentation.cliente.ClienteScreen
 import pe.edu.upeu.pharmamobil.presentation.inicio.InicioScreen
+import pe.edu.upeu.pharmamobil.presentation.pedido.PedidoScreen
 import pe.edu.upeu.pharmamobil.presentation.producto.ProductoScreen
 import pe.edu.upeu.pharmamobil.theme.PharmaMobilTheme
 
@@ -49,11 +49,11 @@ fun App() {
     }
 
     var darkTheme by remember {
-        mutableStateOf(false)
+        mutableStateOf(value = false)
     }
 
     val drawerState = rememberDrawerState(
-        initialValue = DrawerValue.Closed
+        initialValue = DrawerValue.Closed,
     )
 
     val scope = rememberCoroutineScope()
@@ -253,13 +253,11 @@ fun App() {
                     }
 
                     Screen.Pedidos -> {
-
                         Column(
                             modifier = Modifier
-                                .padding(paddingValues)
+                                .padding(paddingValues),
                         ) {
-
-                            Text("Pantalla de pedidos en construcción")
+                            PedidoScreen()
                         }
                     }
                 }
@@ -275,12 +273,12 @@ private fun DrawerHeader() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(24.dp)
+            .padding(24.dp),
     ) {
 
         Text(
             text = "PharmaMobil",
-            style = MaterialTheme.typography.headlineSmall
+            style = MaterialTheme.typography.headlineSmall,
         )
 
         Text(

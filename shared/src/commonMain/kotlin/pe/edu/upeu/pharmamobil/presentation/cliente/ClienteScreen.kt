@@ -52,14 +52,14 @@ fun ClienteScreen() {
         correoError = ClienteValidator.validarCorreo(correo)
         telefonoError = ClienteValidator.validarTelefono(telefono)
 
-        return nombreError == null && correoError == null && telefonoError == null
+        return (nombreError == null && correoError == null && telefonoError == null)
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
 
         Text("PharmaMobil")

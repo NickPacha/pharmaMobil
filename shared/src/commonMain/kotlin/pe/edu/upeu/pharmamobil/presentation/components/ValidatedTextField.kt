@@ -12,7 +12,7 @@ fun ValidatedTextField(
     onValueChange: (String) -> Unit,
     label: String,
     error: String?,
-    modifier: Modifier = Modifier.fillMaxWidth()
+    modifier: Modifier = Modifier.fillMaxWidth(),
 ) {
     OutlinedTextField(
         value = value,
@@ -22,8 +22,10 @@ fun ValidatedTextField(
         },
         isError = error != null,
         supportingText = {
-            error?.let { Text(it) }
+            error?.let {
+                Text(it)
+            }
         },
-        modifier = modifier
+        modifier = modifier,
     )
 }

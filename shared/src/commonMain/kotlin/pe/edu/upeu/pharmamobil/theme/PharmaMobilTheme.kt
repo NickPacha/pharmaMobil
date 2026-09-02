@@ -13,7 +13,7 @@ private val DarkColors = darkColorScheme()
 @Composable
 fun PharmaMobilTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
 
     val colors = if (darkTheme) {
@@ -24,6 +24,6 @@ fun PharmaMobilTheme(
 
     MaterialTheme(
         colorScheme = colors,
-        content = content
+        content = content,
     )
 }
