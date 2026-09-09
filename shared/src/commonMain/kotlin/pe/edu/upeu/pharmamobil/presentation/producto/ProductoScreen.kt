@@ -1,6 +1,7 @@
 package pe.edu.upeu.pharmamobil.presentation.producto
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -16,11 +18,12 @@ import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -29,78 +32,9 @@ import pe.edu.upeu.pharmamobil.presentation.components.ValidatedTextField
 
 @Composable
 fun ProductoScreen(
-    onRegistrar: (Producto) -> Unit = {},
+    viewModel: ProductoViewModel,
 ) {
-
-    var nombre by remember {
-        mutableStateOf("")
-    }
-
-    var precio by remember {
-        mutableStateOf("")
-    }
-
-    var stock by remember {
-        mutableStateOf("")
-    }
-
-    var nombreError by remember {
-        mutableStateOf<String?>(null)
-    }
-
-    var precioError by remember {
-        mutableStateOf<String?>(null)
-    }
-
-    var stockError by remember {
-        mutableStateOf<String?>(null)
-    }
-
-    var mensajeExito by remember {
-        mutableStateOf<String?>(null)
-    }
-
-    // Reto 02: Mock Data
-    val productos = remember {
-        mutableStateListOf(
-            Producto(id = 1L, nombre = "Paracetamol", precio = 15.50, stock = 100, activo = true),
-            Producto(id = 2L, nombre = "Ibuprofeno", precio = 18.90, stock = 50, activo = true),
-            Producto(id = 3L, nombre = "Amoxicilina", precio = 25.00, stock = 5, activo = true),
-            Producto(id = 4L, nombre = "Loratadina", precio = 12.50, stock = 0, activo = false),
-            Producto(id = 5L, nombre = "Diclofenaco", precio = 20.00, stock = 3, activo = true),
-        )
-    }
-
-    // Reto 02: Control de Tabs
-    var tabSeleccionada by remember {
-        mutableStateOf(0)
-    }
-
-    val titulosTabs = listOf("Activos", "Inactivos", "Bajo stock")
-
-    // Reto 02: Filtrado dinámico
-    val productosFiltrados = when (tabSeleccionada) {
-        0 -> productos.filter { (it.activo && it.stock > 5) }
-        1 -> productos.filter { (!it.activo || it.stock == 0) }
-        2 -> productos.filter { (it.activo && it.stock > 0 && it.stock <= 5) }
-        else -> productos
-    }
-
-    fun validar(): Producto? {
-        nombreError = ProductoValidator.validarNombre(nombre)
-        precioError = ProductoValidator.validarPrecio(precio)
-        stockError = ProductoValidator.validarStock(stock)
-
-        if ((nombreError != null || precioError != null || stockError != null)) return null
-
-        return Producto(
-            id = (productos.size + 1).toLong(),
-            nombre = nombre.trim(),
-            precio = precio.toDouble(),
-            stock = stock.toInt(),
-            activo = true, // Por defecto activo al registrar
-        )
-    }
+    val uiState by viewModel.uiState.collectAsState()
 
     Column(
         modifier = Modifier
@@ -108,51 +42,36 @@ fun ProductoScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-
         Text(
-            text = "Inventario de Productos",
-            style = MaterialTheme.typography.titleLarge,
+            text = "Gestión de Productos",
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
         )
 
-        // Reto 02: Implementación de Tabs
-        PrimaryTabRow(selectedTabIndex = tabSeleccionada) {
-            titulosTabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = tabSeleccionada == index,
-                    onClick = { tabSeleccionada = index },
-                    text = {
-                        Text(text = title)
-                    },
-                )
-            }
-        }
-
-        // Lista de productos filtrados
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-        ) {
-            items(productosFiltrados) { producto ->
-                ListItem(
-                    headlineContent = {
-                        Text(producto.nombre)
-                    },
-                    supportingContent = {
-                        Text("Precio: S/ ${producto.precio} | Stock: ${producto.stock}")
-                    },
-                    trailingContent = {
-                        if (producto.stock <= 5) {
-                            Text(
-                                text = "Bajo stock",
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.labelSmall,
-                            )
-                        }
-                    },
-                )
-                HorizontalDivider()
+        // UX-02: Exhaustividad en el Renderizado
+        Box(modifier = Modifier.weight(1f)) {
+            when (val fase = uiState.fase) {
+                is ProductoFase.Cargando -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+                is ProductoFase.SinProductos -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("No hay productos registrados")
+                    }
+                }
+                is ProductoFase.ConProductos -> {
+                    ListaProductosConTabs(productos = fase.productos)
+                }
+                is ProductoFase.Error -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = "Error: ${fase.mensaje}",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
             }
         }
 
@@ -163,11 +82,12 @@ fun ProductoScreen(
             style = MaterialTheme.typography.titleMedium,
         )
 
+        // Formulario (Persistencia del Estado del Formulario: RF-PRE-03)
         ValidatedTextField(
-            value = nombre,
-            onValueChange = { nombre = it },
+            value = uiState.nombre,
+            onValueChange = { viewModel.onNombreChange(it) },
             label = "Nombre",
-            error = nombreError,
+            error = uiState.nombreError,
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -176,46 +96,81 @@ fun ProductoScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             ValidatedTextField(
-                value = precio,
-                onValueChange = { precio = it },
+                value = uiState.precio,
+                onValueChange = { viewModel.onPrecioChange(it) },
                 label = "Precio",
-                error = precioError,
+                error = uiState.precioError,
                 modifier = Modifier.weight(1f),
             )
 
             ValidatedTextField(
-                value = stock,
-                onValueChange = { stock = it },
+                value = uiState.stock,
+                onValueChange = { viewModel.onStockChange(it) },
                 label = "Stock",
-                error = stockError,
+                error = uiState.stockError,
                 modifier = Modifier.weight(1f),
             )
         }
 
         Button(
-            onClick = {
-                mensajeExito = null
-                val producto = validar()
-                if (producto != null) {
-                    productos.add(producto)
-                    onRegistrar(producto)
-                    mensajeExito = "Producto \"${producto.nombre}\" registrado correctamente"
-                    nombre = ""
-                    precio = ""
-                    stock = ""
-                }
-            },
+            onClick = { viewModel.registrar() },
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text("Registrar")
         }
 
-        mensajeExito?.let {
+        uiState.mensajeExito?.let {
             Text(
                 text = it,
                 color = MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.bodyMedium,
             )
+        }
+    }
+}
+
+@Composable
+fun ListaProductosConTabs(productos: List<Producto>) {
+    var tabSeleccionada by remember { mutableStateOf(0) }
+    val titulosTabs = listOf("Activos", "Inactivos", "Bajo stock")
+
+    val productosFiltrados = when (tabSeleccionada) {
+        0 -> productos.filter { it.activo && it.stock > Producto.STOCK_MINIMO }
+        1 -> productos.filter { !it.activo || it.stock == 0 }
+        2 -> productos.filter { it.requiereReposicion }
+        else -> productos
+    }
+
+    Column {
+        PrimaryTabRow(selectedTabIndex = tabSeleccionada) {
+            titulosTabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = tabSeleccionada == index,
+                    onClick = { tabSeleccionada = index },
+                    text = { Text(text = title) },
+                )
+            }
+        }
+
+        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+            items(productosFiltrados) { producto ->
+                ListItem(
+                    headlineContent = { Text(producto.nombre) },
+                    supportingContent = {
+                        Text("Precio: S/ ${producto.precio} | Stock: ${producto.stock}")
+                    },
+                    trailingContent = {
+                        if (producto.requiereReposicion) {
+                            Text(
+                                text = "Reponer",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.labelSmall,
+                            )
+                        }
+                    },
+                )
+                HorizontalDivider()
+            }
         }
     }
 }

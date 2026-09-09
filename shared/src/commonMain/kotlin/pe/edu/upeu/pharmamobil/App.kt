@@ -40,224 +40,230 @@ import pe.edu.upeu.pharmamobil.presentation.cliente.ClienteScreen
 import pe.edu.upeu.pharmamobil.presentation.inicio.InicioScreen
 import pe.edu.upeu.pharmamobil.presentation.pedido.PedidoScreen
 import pe.edu.upeu.pharmamobil.presentation.producto.ProductoScreen
+import pe.edu.upeu.pharmamobil.presentation.producto.ProductoViewModel
 import pe.edu.upeu.pharmamobil.theme.PharmaMobilTheme
+
+import org.koin.compose.KoinContext
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun App() {
-    var pantallaActual by remember {
-        mutableStateOf<Screen>(Screen.Inicio)
-    }
+    KoinContext {
+        var pantallaActual by remember {
+            mutableStateOf<Screen>(Screen.Inicio)
+        }
 
-    var darkTheme by remember {
-        mutableStateOf(value = false)
-    }
+        var darkTheme by remember {
+            mutableStateOf(value = false)
+        }
 
-    val drawerState = rememberDrawerState(
-        initialValue = DrawerValue.Closed,
-    )
+        val drawerState = rememberDrawerState(
+            initialValue = DrawerValue.Closed,
+        )
 
-    val scope = rememberCoroutineScope()
+        val scope = rememberCoroutineScope()
 
-    PharmaMobilTheme(
-        darkTheme = darkTheme
-    ) {
-
-        ModalNavigationDrawer(
-
-            drawerState = drawerState,
-
-            drawerContent = {
-
-                ModalDrawerSheet {
-
-                    DrawerHeader()
-
-                    NavigationDrawerItem(
-                        label = {
-                            Text("Inicio")
-                        },
-                        selected = pantallaActual is Screen.Inicio,
-                        onClick = {
-
-                            pantallaActual = Screen.Inicio
-
-                            scope.launch {
-                                drawerState.close()
-                            }
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.Home,
-                                contentDescription = "Inicio"
-                            )
-                        }
-                    )
-
-                    NavigationDrawerItem(
-                        label = {
-                            Text("Productos")
-                        },
-                        selected = pantallaActual is Screen.Productos,
-                        onClick = {
-
-                            pantallaActual = Screen.Productos
-
-                            scope.launch {
-                                drawerState.close()
-                            }
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.Medication,
-                                contentDescription = "Productos"
-                            )
-                        }
-                    )
-
-                    NavigationDrawerItem(
-                        label = {
-                            Text("Clientes")
-                        },
-                        selected = pantallaActual is Screen.Clientes,
-                        onClick = {
-
-                            pantallaActual = Screen.Clientes
-
-                            scope.launch {
-                                drawerState.close()
-                            }
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Clientes"
-                            )
-                        }
-                    )
-
-                    NavigationDrawerItem(
-                        label = {
-                            Text("Pedidos")
-                        },
-                        selected = pantallaActual is Screen.Pedidos,
-                        onClick = {
-
-                            pantallaActual = Screen.Pedidos
-
-                            scope.launch {
-                                drawerState.close()
-                            }
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.ShoppingCart,
-                                contentDescription = "Pedidos"
-                            )
-                        }
-                    )
-
-                    Spacer(
-                        modifier = Modifier.padding(8.dp)
-                    )
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                horizontal = 16.dp,
-                                vertical = 12.dp
-                            ),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-
-                        Text(
-                            text = "Modo oscuro"
-                        )
-
-                        Switch(
-                            checked = darkTheme,
-                            onCheckedChange = {
-                                darkTheme = it
-                            }
-                        )
-                    }
-                }
-            }
+        PharmaMobilTheme(
+            darkTheme = darkTheme
         ) {
 
-            Scaffold(
+            ModalNavigationDrawer(
 
-                topBar = {
+                drawerState = drawerState,
 
-                    TopAppBar(
+                drawerContent = {
 
-                        title = {
-                            Text(
-                                text = tituloPantalla(
-                                    pantallaActual
-                                )
-                            )
-                        },
+                    ModalDrawerSheet {
 
-                        navigationIcon = {
+                        DrawerHeader()
 
-                            IconButton(
-                                onClick = {
+                        NavigationDrawerItem(
+                            label = {
+                                Text("Inicio")
+                            },
+                            selected = pantallaActual is Screen.Inicio,
+                            onClick = {
 
-                                    scope.launch {
+                                pantallaActual = Screen.Inicio
 
-                                        drawerState.open()
-                                    }
+                                scope.launch {
+                                    drawerState.close()
                                 }
-                            ) {
-
+                            },
+                            icon = {
                                 Icon(
-                                    imageVector = Icons.Default.Menu,
-                                    contentDescription = "Abrir menú"
+                                    imageVector = Icons.Default.Home,
+                                    contentDescription = "Inicio"
                                 )
                             }
+                        )
+
+                        NavigationDrawerItem(
+                            label = {
+                                Text("Productos")
+                            },
+                            selected = pantallaActual is Screen.Productos,
+                            onClick = {
+
+                                pantallaActual = Screen.Productos
+
+                                scope.launch {
+                                    drawerState.close()
+                                }
+                            },
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Default.Medication,
+                                    contentDescription = "Productos"
+                                )
+                            }
+                        )
+
+                        NavigationDrawerItem(
+                            label = {
+                                Text("Clientes")
+                            },
+                            selected = pantallaActual is Screen.Clientes,
+                            onClick = {
+
+                                pantallaActual = Screen.Clientes
+
+                                scope.launch {
+                                    drawerState.close()
+                                }
+                            },
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = "Clientes"
+                                )
+                            }
+                        )
+
+                        NavigationDrawerItem(
+                            label = {
+                                Text("Pedidos")
+                            },
+                            selected = pantallaActual is Screen.Pedidos,
+                            onClick = {
+
+                                pantallaActual = Screen.Pedidos
+
+                                scope.launch {
+                                    drawerState.close()
+                                }
+                            },
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Default.ShoppingCart,
+                                    contentDescription = "Pedidos"
+                                )
+                            }
+                        )
+
+                        Spacer(
+                            modifier = Modifier.padding(8.dp)
+                        )
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    horizontal = 16.dp,
+                                    vertical = 12.dp
+                                ),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+
+                            Text(
+                                text = "Modo oscuro"
+                            )
+
+                            Switch(
+                                checked = darkTheme,
+                                onCheckedChange = {
+                                    darkTheme = it
+                                }
+                            )
                         }
-                    )
+                    }
                 }
+            ) {
 
-            ) { paddingValues ->
+                Scaffold(
 
-                when (pantallaActual) {
+                    topBar = {
 
-                    Screen.Inicio -> {
+                        TopAppBar(
 
-                        InicioScreen()
+                            title = {
+                                Text(
+                                    text = tituloPantalla(
+                                        pantallaActual
+                                    )
+                                )
+                            },
+
+                            navigationIcon = {
+
+                                IconButton(
+                                    onClick = {
+
+                                        scope.launch {
+
+                                            drawerState.open()
+                                        }
+                                    }
+                                ) {
+
+                                    Icon(
+                                        imageVector = Icons.Default.Menu,
+                                        contentDescription = "Abrir menú"
+                                    )
+                                }
+                            }
+                        )
                     }
 
-                    Screen.Productos -> {
+                ) { paddingValues ->
 
-                        Column(
-                            modifier = Modifier
-                                .padding(paddingValues)
-                        ) {
+                    when (pantallaActual) {
 
-                            ProductoScreen()
+                        Screen.Inicio -> {
+
+                            InicioScreen()
                         }
-                    }
 
-                    Screen.Clientes -> {
+                        Screen.Productos -> {
 
-                        Column(
-                            modifier = Modifier
-                                .padding(paddingValues)
-                        ) {
-
-                            ClienteScreen()
+                            Column(
+                                modifier = Modifier
+                                    .padding(paddingValues)
+                            ) {
+                                val viewModel = koinViewModel<ProductoViewModel>()
+                                ProductoScreen(viewModel = viewModel)
+                            }
                         }
-                    }
 
-                    Screen.Pedidos -> {
-                        Column(
-                            modifier = Modifier
-                                .padding(paddingValues),
-                        ) {
-                            PedidoScreen()
+                        Screen.Clientes -> {
+
+                            Column(
+                                modifier = Modifier
+                                    .padding(paddingValues)
+                            ) {
+
+                                ClienteScreen()
+                            }
+                        }
+
+                        Screen.Pedidos -> {
+                            Column(
+                                modifier = Modifier
+                                    .padding(paddingValues),
+                            ) {
+                                PedidoScreen()
+                            }
                         }
                     }
                 }
