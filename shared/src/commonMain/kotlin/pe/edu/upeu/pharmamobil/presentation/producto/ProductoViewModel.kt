@@ -7,12 +7,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import pe.edu.upeu.pharmamobil.domain.platform.Compartidor
 import pe.edu.upeu.pharmamobil.domain.repository.ProductoRepository
 import pe.edu.upeu.pharmamobil.domain.usecase.RegistrarProductoUseCase
 
 class ProductoViewModel(
     private val repository: ProductoRepository,
-    private val registrarProductoUseCase: RegistrarProductoUseCase
+    private val registrarProductoUseCase: RegistrarProductoUseCase,
+    private val compartidor: Compartidor,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProductoUiState())
@@ -27,17 +29,23 @@ class ProductoViewModel(
             _uiState.update { it.copy(fase = ProductoFase.Cargando) }
             try {
                 val list = repository.listar()
+                val uiList = list.map { it.toUi() }
                 _uiState.update {
-                    if (list.isEmpty()) {
+                    if (uiList.isEmpty()) {
                         it.copy(fase = ProductoFase.SinProductos)
                     } else {
-                        it.copy(fase = ProductoFase.ConProductos(list))
+                        it.copy(fase = ProductoFase.ConProductos(uiList))
                     }
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(fase = ProductoFase.Error(e.message ?: "Error desconocido")) }
             }
         }
+    }
+
+    fun compartirProducto(producto: ProductoUiModel) {
+        val texto = "${producto.nombre} ${producto.precioFormateado} Stock: ${producto.stock}"
+        compartidor.compartir(texto)
     }
 
     fun onNombreChange(nombre: String) {
@@ -58,7 +66,7 @@ class ProductoViewModel(
             val result = registrarProductoUseCase(
                 nombre = currentState.nombre,
                 precio = currentState.precio,
-                stock = currentState.stock
+                stock = currentState.stock,
             )
 
             result.onSuccess { producto ->
@@ -70,7 +78,7 @@ class ProductoViewModel(
                         mensajeExito = "Producto \"${producto.nombre}\" registrado correctamente",
                         nombreError = null,
                         precioError = null,
-                        stockError = null
+                        stockError = null,
                     )
                 }
                 cargarProductos()
@@ -81,7 +89,7 @@ class ProductoViewModel(
                             nombreError = e.errors["nombre"],
                             precioError = e.errors["precio"],
                             stockError = e.errors["stock"],
-                            mensajeExito = null
+                            mensajeExito = null,
                         )
                     }
                 } else {
@@ -90,7 +98,7 @@ class ProductoViewModel(
                             mensajeExito = "Error: ${e.message}",
                             nombreError = null,
                             precioError = null,
-                            stockError = null
+                            stockError = null,
                         )
                     }
                 }

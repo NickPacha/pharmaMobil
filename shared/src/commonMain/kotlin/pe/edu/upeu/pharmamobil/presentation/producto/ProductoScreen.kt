@@ -9,9 +9,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
@@ -62,13 +66,15 @@ fun ProductoScreen(
                     }
                 }
                 is ProductoFase.ConProductos -> {
-                    ListaProductosConTabs(productos = fase.productos)
+                    ListaProductosConTabs(
+                        productos = fase.productos,
+                    ) { viewModel.compartirProducto(it) }
                 }
                 is ProductoFase.Error -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
                             text = "Error: ${fase.mensaje}",
-                            color = MaterialTheme.colorScheme.error
+                            color = MaterialTheme.colorScheme.error,
                         )
                     }
                 }
@@ -130,13 +136,16 @@ fun ProductoScreen(
 }
 
 @Composable
-fun ListaProductosConTabs(productos: List<Producto>) {
+fun ListaProductosConTabs(
+    productos: List<ProductoUiModel>,
+    onCompartir: (ProductoUiModel) -> Unit,
+) {
     var tabSeleccionada by remember { mutableStateOf(0) }
     val titulosTabs = listOf("Activos", "Inactivos", "Bajo stock")
 
     val productosFiltrados = when (tabSeleccionada) {
-        0 -> productos.filter { it.activo && it.stock > Producto.STOCK_MINIMO }
-        1 -> productos.filter { !it.activo || it.stock == 0 }
+        0 -> productos.filter { (it.productoOriginal.activo) && (it.stock > Producto.STOCK_MINIMO) }
+        1 -> productos.filter { (!it.productoOriginal.activo) || (it.stock == 0) }
         2 -> productos.filter { it.requiereReposicion }
         else -> productos
     }
@@ -157,15 +166,26 @@ fun ListaProductosConTabs(productos: List<Producto>) {
                 ListItem(
                     headlineContent = { Text(producto.nombre) },
                     supportingContent = {
-                        Text("Precio: S/ ${producto.precio} | Stock: ${producto.stock}")
+                        Text("Precio: ${producto.precioFormateado} | Stock: ${producto.stock}")
                     },
                     trailingContent = {
-                        if (producto.requiereReposicion) {
-                            Text(
-                                text = "Reponer",
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.labelSmall,
-                            )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            if (producto.requiereReposicion) {
+                                Text(
+                                    text = "Reponer",
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.labelSmall,
+                                )
+                            }
+                            IconButton(onClick = { onCompartir(producto) }) {
+                                Icon(
+                                    imageVector = Icons.Default.Share,
+                                    contentDescription = "Compartir",
+                                )
+                            }
                         }
                     },
                 )
