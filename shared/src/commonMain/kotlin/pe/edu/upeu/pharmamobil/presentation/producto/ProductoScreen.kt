@@ -37,6 +37,7 @@ import pe.edu.upeu.pharmamobil.presentation.components.ValidatedTextField
 @Composable
 fun ProductoScreen(
     viewModel: ProductoViewModel,
+    puedeEscribir: Boolean = true,
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -52,7 +53,6 @@ fun ProductoScreen(
             fontWeight = FontWeight.Bold,
         )
 
-        // UX-02: Exhaustividad en el Renderizado
         Box(modifier = Modifier.weight(1f)) {
             when (val fase = uiState.fase) {
                 is ProductoFase.Cargando -> {
@@ -81,56 +81,58 @@ fun ProductoScreen(
             }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        // RF-UI-02: Visibilidad Adaptativa por Permisos
+        if (puedeEscribir) {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-        Text(
-            text = "Registro de Nuevo Producto",
-            style = MaterialTheme.typography.titleMedium,
-        )
-
-        // Formulario (Persistencia del Estado del Formulario: RF-PRE-03)
-        ValidatedTextField(
-            value = uiState.nombre,
-            onValueChange = { viewModel.onNombreChange(it) },
-            label = "Nombre",
-            error = uiState.nombreError,
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            ValidatedTextField(
-                value = uiState.precio,
-                onValueChange = { viewModel.onPrecioChange(it) },
-                label = "Precio",
-                error = uiState.precioError,
-                modifier = Modifier.weight(1f),
-            )
-
-            ValidatedTextField(
-                value = uiState.stock,
-                onValueChange = { viewModel.onStockChange(it) },
-                label = "Stock",
-                error = uiState.stockError,
-                modifier = Modifier.weight(1f),
-            )
-        }
-
-        Button(
-            onClick = { viewModel.registrar() },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text("Registrar")
-        }
-
-        uiState.mensajeExito?.let {
             Text(
-                text = it,
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.bodyMedium,
+                text = "Registro de Nuevo Producto",
+                style = MaterialTheme.typography.titleMedium,
             )
+
+            ValidatedTextField(
+                value = uiState.nombre,
+                onValueChange = { viewModel.onNombreChange(it) },
+                label = "Nombre",
+                error = uiState.nombreError,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                ValidatedTextField(
+                    value = uiState.precio,
+                    onValueChange = { viewModel.onPrecioChange(it) },
+                    label = "Precio",
+                    error = uiState.precioError,
+                    modifier = Modifier.weight(1f),
+                )
+
+                ValidatedTextField(
+                    value = uiState.stock,
+                    onValueChange = { viewModel.onStockChange(it) },
+                    label = "Stock",
+                    error = uiState.stockError,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            Button(
+                onClick = { viewModel.registrar() },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Registrar")
+            }
+
+            uiState.mensajeExito?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
         }
     }
 }
