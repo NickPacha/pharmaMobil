@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import pe.edu.upeu.pharmamobil.domain.platform.Compartidor
@@ -21,15 +22,14 @@ class ProductoViewModel(
     val uiState: StateFlow<ProductoUiState> = _uiState.asStateFlow()
 
     init {
-        cargarProductos()
+        observarProductosLocales()
+        sincronizarConServidor()
     }
 
-    private fun cargarProductos() {
+    private fun observarProductosLocales() {
         viewModelScope.launch {
-            _uiState.update { it.copy(fase = ProductoFase.Cargando) }
-            try {
-                val list = repository.listar()
-                val uiList = list.map { it.toUi() }
+            repository.observar().collectLatest { lista ->
+                val uiList = lista.map { it.toUi() }
                 _uiState.update {
                     if (uiList.isEmpty()) {
                         it.copy(fase = ProductoFase.SinProductos)
@@ -37,8 +37,15 @@ class ProductoViewModel(
                         it.copy(fase = ProductoFase.ConProductos(uiList))
                     }
                 }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(fase = ProductoFase.Error(e.message ?: "Error desconocido")) }
+            }
+        }
+    }
+
+    fun sincronizarConServidor() {
+        viewModelScope.launch {
+            val result = repository.sincronizar()
+            _uiState.update {
+                it.copy(sinConexion = result.isFailure)
             }
         }
     }
@@ -75,13 +82,13 @@ class ProductoViewModel(
                         nombre = "",
                         precio = "",
                         stock = "",
-                        mensajeExito = "Producto \"${producto.nombre}\" registrado correctamente",
+                        mensajeExito = "Producto \"${producto.nombre}\" guardado localmente",
                         nombreError = null,
                         precioError = null,
                         stockError = null,
                     )
                 }
-                cargarProductos()
+                sincronizarConServidor()
             }.onFailure { e ->
                 if (e is pe.edu.upeu.pharmamobil.domain.usecase.ValidationException) {
                     _uiState.update {

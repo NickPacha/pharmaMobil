@@ -1,5 +1,7 @@
 package pe.edu.upeu.pharmamobil.data
 
+import kotlinx.coroutines.runBlocking
+import pe.edu.upeu.pharmamobil.data.repository.ProductoRepositorioEnMemoria
 import pe.edu.upeu.pharmamobil.domain.model.Producto
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -10,25 +12,23 @@ class ProductoRepositoryTest {
         id = 0L,
         nombre = nombre,
         precio = 12.50,
-        stock = 5
+        stock = 5,
     )
 
     @Test
-    fun asignaIdCorrelativoAlRegistrar() {
+    fun asignaIdCorrelativoAlRegistrar() = runBlocking {
+        val repository = ProductoRepositorioEnMemoria()
 
-        val repository = ProductoRepository()
-
-        val primero = repository.registrar(nuevoProducto("Paracetamol"))
-        val segundo = repository.registrar(nuevoProducto("Ibuprofeno"))
+        val primero = repository.registrar(nuevoProducto("Paracetamol")).getOrThrow()
+        val segundo = repository.registrar(nuevoProducto("Ibuprofeno")).getOrThrow()
 
         assertEquals(1L, primero.id)
         assertEquals(2L, segundo.id)
     }
 
     @Test
-    fun listarDevuelveLosProductosRegistrados() {
-
-        val repository = ProductoRepository()
+    fun listarDevuelveLosProductosRegistrados() = runBlocking {
+        val repository = ProductoRepositorioEnMemoria()
         repository.registrar(nuevoProducto("Paracetamol"))
         repository.registrar(nuevoProducto("Ibuprofeno"))
 

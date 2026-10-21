@@ -4,12 +4,12 @@ import pe.edu.upeu.pharmamobil.domain.model.Producto
 import pe.edu.upeu.pharmamobil.domain.repository.ProductoRepository
 
 class RegistrarProductoUseCase(
-    private val repository: ProductoRepository
+    private val repository: ProductoRepository,
 ) {
     suspend operator fun invoke(
         nombre: String,
         precio: String,
-        stock: String
+        stock: String,
     ): Result<Producto> {
         val errors = mutableMapOf<String, String>()
 
@@ -44,11 +44,11 @@ class RegistrarProductoUseCase(
             nombre = nombre.trim(),
             precio = precioValor!!,
             stock = stockValor!!,
-            activo = true
+            activo = true,
         )
 
         return try {
-            Result.success(repository.registrar(producto))
+            repository.registrar(producto)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -56,4 +56,3 @@ class RegistrarProductoUseCase(
 }
 
 class ValidationException(val errors: Map<String, String>) : Exception("Validation failed")
-

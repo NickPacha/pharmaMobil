@@ -1,34 +1,29 @@
 package pe.edu.upeu.pharmamobil.data.repository
 
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import pe.edu.upeu.pharmamobil.domain.model.Producto
 import pe.edu.upeu.pharmamobil.domain.repository.ProductoRepository
-import kotlin.random.Random
 
 class ProductoRepositorioEnMemoria : ProductoRepository {
-    private val productos = mutableListOf(
-        Producto(id = 1L, nombre = "Paracetamol", precio = 15.50, stock = 100, activo = true),
-        Producto(id = 2L, nombre = "Ibuprofeno", precio = 18.90, stock = 50, activo = true),
-        Producto(id = 3L, nombre = "Amoxicilina", precio = 25.00, stock = 5, activo = true),
-        Producto(id = 4L, nombre = "Loratadina", precio = 12.50, stock = 0, activo = false),
-        Producto(id = 5L, nombre = "Diclofenaco", precio = 20.00, stock = 3, activo = true),
-    )
+    private val productos = mutableListOf<Producto>()
+    private val _flow = MutableStateFlow<List<Producto>>(emptyList())
 
-    private suspend fun simulateDelay() {
-        delay(Random.nextLong(300, 800))
-    }
-
-    override suspend fun registrar(producto: Producto): Producto {
-        simulateDelay()
-        val nuevoProducto = producto.copy(
-            id = (productos.maxOfOrNull { it.id } ?: 0L) + 1L
-        )
-        productos.add(nuevoProducto)
-        return nuevoProducto
-    }
+    override fun observar(): Flow<List<Producto>> = _flow.asStateFlow()
 
     override suspend fun listar(): List<Producto> {
-        simulateDelay()
         return productos.toList()
+    }
+
+    override suspend fun registrar(producto: Producto): Result<Producto> {
+        val nuevo = producto.copy(id = (productos.size + 1).toLong())
+        productos.add(nuevo)
+        _flow.value = productos.toList()
+        return Result.success(nuevo)
+    }
+
+    override suspend fun sincronizar(): Result<Unit> {
+        return Result.success(Unit)
     }
 }
