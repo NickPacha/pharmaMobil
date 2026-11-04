@@ -372,3 +372,4 @@ stateDiagram-v2
   SincronizarUseCaseTest > reintentoTransitorioIncrementaIntentosYSeMantienePendiente PASSED
   BUILD SUCCESSFUL in 39s (33 actionable tasks executed)
   ```
+
