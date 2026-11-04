@@ -1,20 +1,45 @@
 package pe.edu.upeu.pharmamobil.data.repository
 
+import io.ktor.client.plugins.ResponseException
+import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import pe.edu.upeu.pharmamobil.data.local.ProductoLocal
 import pe.edu.upeu.pharmamobil.data.remote.ProductoApi
 import pe.edu.upeu.pharmamobil.data.remote.dto.ProductoDto
 import pe.edu.upeu.pharmamobil.domain.model.Producto
+import pe.edu.upeu.pharmamobil.domain.model.ResultadoEnvio
+import pe.edu.upeu.pharmamobil.domain.model.ResumenSync
+import pe.edu.upeu.pharmamobil.domain.port.Telemetria
 import pe.edu.upeu.pharmamobil.domain.repository.ProductoRepository
+import kotlin.math.min
+import kotlin.math.pow
 
 class ProductoRepositorioOffline(
     private val productoLocal: ProductoLocal,
     private val productoApi: ProductoApi,
+    private val telemetria: Telemetria,
 ) : ProductoRepository {
+
+    private var ultimaSyncMs: Long = 0L
 
     override fun observar(): Flow<List<Producto>> {
         return productoLocal.observar()
+    }
+
+    override fun observarResumenSync(): Flow<ResumenSync> {
+        return combine(
+            productoLocal.observarCantidadPendientes(),
+            productoLocal.observarCantidadFallidas(),
+        ) { pendientes, fallidas ->
+            ResumenSync(
+                pendientes = pendientes,
+                fallidas = fallidas,
+                ultimaSyncMs = ultimaSyncMs,
+            )
+        }
     }
 
     override suspend fun listar(): List<Producto> {
@@ -22,23 +47,20 @@ class ProductoRepositorioOffline(
     }
 
     override suspend fun registrar(producto: Producto): Result<Producto> {
-        // RF-PERS-02: Guardado local inmediato con pendiente = 1 e ID negativo
         val localGuardado = productoLocal.guardarPendiente(producto)
-
-        // Intento de sincronización inmediata si hay red
+        telemetria.registrarEvento("producto_registrado_offline", mapOf("nombre" to producto.nombre))
         runCatching {
-            subirPendientes()
+            sincronizar()
         }
-
         return Result.success(localGuardado)
     }
 
     override suspend fun sincronizar(): Result<Unit> {
         return runCatching {
-            // RF-SINC-01 / RN-OFF-01: Fase 1 - Subida de pendientes obligatoria
-            subirPendientes()
+            // RF-SYNC-05 & RN-INT-03: Subir pendientes antes de descargar
+            subirPendientesConReintento()
 
-            // RF-SINC-01: Fase 2 - Bajada y reemplazo remoto
+            // Bajada y reemplazo remoto
             val remoteDtos = productoApi.listar()
             val remotos = remoteDtos.map { dto ->
                 Producto(
@@ -50,10 +72,13 @@ class ProductoRepositorioOffline(
                 )
             }
             productoLocal.reemplazarSincronizados(remotos)
+            ultimaSyncMs = 1700000000000L
+        }.onFailure { e ->
+            telemetria.registrarError(e, mapOf("operacion" to "sincronizar"))
         }
     }
 
-    private suspend fun subirPendientes() {
+    private suspend fun subirPendientesConReintento() {
         val pendientes = productoLocal.pendientes()
         for (p in pendientes) {
             val dto = ProductoDto(
@@ -62,15 +87,51 @@ class ProductoRepositorioOffline(
                 stock = p.stock,
                 activo = p.activo,
             )
-            val creado = productoApi.registrar(dto)
-            val confirmado = Producto(
-                id = creado.id ?: p.id,
-                nombre = creado.nombre,
-                precio = creado.precio,
-                stock = creado.stock,
-                activo = creado.activo,
-            )
-            productoLocal.actualizarTrasSincronizar(p.id, confirmado)
+
+            try {
+                val creado = productoApi.registrar(dto)
+                val confirmado = Producto(
+                    id = creado.id ?: p.id,
+                    nombre = creado.nombre,
+                    precio = creado.precio,
+                    stock = creado.stock,
+                    activo = creado.activo,
+                )
+                productoLocal.actualizarTrasSincronizar(p.id, confirmado)
+            } catch (e: Throwable) {
+                val clasificado = clasificarError(e)
+                when (clasificado) {
+                    is ResultadoEnvio.Transitorio -> {
+                        // RF-SYNC-03: Incrementar intento, retardo exponencial
+                        productoLocal.sumarIntento(p.id, clasificado.mensaje)
+                        val retardoSegundos = min(2.0.pow(1.0).toLong(), 16L)
+                        delay(retardoSegundos * 1000L)
+                    }
+                    is ResultadoEnvio.Permanente -> {
+                        // RF-SYNC-04: Marcar fallida inmediatamente
+                        productoLocal.marcarFallido(p.id, clasificado.mensaje)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun clasificarError(e: Throwable): ResultadoEnvio {
+        return when (e) {
+            is ResponseException -> {
+                when (e.response.status) {
+                    HttpStatusCode.BadRequest, HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden,
+                    HttpStatusCode.NotFound, HttpStatusCode.Conflict -> {
+                        ResultadoEnvio.Permanente("Error HTTP ${e.response.status.value}: ${e.message}")
+                    }
+                    else -> {
+                        ResultadoEnvio.Transitorio("Error HTTP ${e.response.status.value}: ${e.message}")
+                    }
+                }
+            }
+            else -> {
+                ResultadoEnvio.Transitorio("Fallo de red/conexión: ${e.message ?: "Sin respuesta"}")
+            }
         }
     }
 }

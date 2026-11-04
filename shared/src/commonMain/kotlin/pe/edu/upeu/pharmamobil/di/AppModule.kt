@@ -17,6 +17,7 @@ import pe.edu.upeu.pharmamobil.domain.repository.ProductoRepository
 import pe.edu.upeu.pharmamobil.domain.usecase.CerrarSesionUseCase
 import pe.edu.upeu.pharmamobil.domain.usecase.IniciarSesionUseCase
 import pe.edu.upeu.pharmamobil.domain.usecase.RegistrarProductoUseCase
+import pe.edu.upeu.pharmamobil.domain.usecase.SincronizarUseCase
 import pe.edu.upeu.pharmamobil.presentation.login.LoginViewModel
 import pe.edu.upeu.pharmamobil.presentation.producto.ProductoViewModel
 
@@ -28,9 +29,10 @@ val appModule = module {
     single { PharmaDb(get<DriverFactory>().crearDriver()) }
     single { ProductoLocal(get()) }
     single { ProductoApi(get()) }
-    single<ProductoRepository> { ProductoRepositorioOffline(get(), get()) }
+    single<ProductoRepository> { ProductoRepositorioOffline(get(), get(), get()) }
 
     factoryOf(::RegistrarProductoUseCase)
+    factoryOf(::SincronizarUseCase)
     factoryOf(::IniciarSesionUseCase)
     factoryOf(::CerrarSesionUseCase)
 

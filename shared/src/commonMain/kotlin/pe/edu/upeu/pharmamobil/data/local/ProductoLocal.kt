@@ -2,6 +2,7 @@ package pe.edu.upeu.pharmamobil.data.local
 
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
+import app.cash.sqldelight.coroutines.mapToOne
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
@@ -11,6 +12,10 @@ import pe.edu.upeu.pharmamobil.domain.model.Producto
 
 class ProductoLocal(database: PharmaDb) {
     private val queries = database.productoQueries
+
+    companion object {
+        const val MAX_INTENTOS = 5L
+    }
 
     fun observar(): Flow<List<Producto>> {
         return queries.listarTodos()
@@ -39,12 +44,14 @@ class ProductoLocal(database: PharmaDb) {
             precio = productoConId.precio,
             stock = productoConId.stock.toLong(),
             pendiente = 1L,
+            intentos = 0L,
+            ultimoError = null,
         )
         return productoConId
     }
 
-    fun pendientes(): List<Producto> {
-        return queries.listarPendientes().executeAsList().map {
+    fun pendientes(maxIntentos: Long = MAX_INTENTOS): List<Producto> {
+        return queries.listarPendientes(maxIntentos).executeAsList().map {
             Producto(
                 id = it.id,
                 nombre = it.nombre,
@@ -52,6 +59,22 @@ class ProductoLocal(database: PharmaDb) {
                 stock = it.stock.toInt(),
             )
         }
+    }
+
+    fun observarCantidadPendientes(maxIntentos: Long = MAX_INTENTOS): Flow<Long> {
+        return queries.contarPendientes(maxIntentos).asFlow().mapToOne(Dispatchers.IO)
+    }
+
+    fun observarCantidadFallidas(maxIntentos: Long = MAX_INTENTOS): Flow<Long> {
+        return queries.contarFallidas(maxIntentos).asFlow().mapToOne(Dispatchers.IO)
+    }
+
+    fun sumarIntento(id: Long, errorMsg: String) {
+        queries.sumarIntento(errorMsg, id)
+    }
+
+    fun marcarFallido(id: Long, errorMsg: String, maxIntentos: Long = MAX_INTENTOS) {
+        queries.marcarFallido(maxIntentos, errorMsg, id)
     }
 
     fun reemplazarSincronizados(remotos: List<Producto>) {
@@ -64,6 +87,8 @@ class ProductoLocal(database: PharmaDb) {
                     precio = producto.precio,
                     stock = producto.stock.toLong(),
                     pendiente = 0L,
+                    intentos = 0L,
+                    ultimoError = null,
                 )
             }
         }
@@ -80,6 +105,8 @@ class ProductoLocal(database: PharmaDb) {
                 precio = confirmado.precio,
                 stock = confirmado.stock.toLong(),
                 pendiente = 0L,
+                intentos = 0L,
+                ultimoError = null,
             )
         }
     }

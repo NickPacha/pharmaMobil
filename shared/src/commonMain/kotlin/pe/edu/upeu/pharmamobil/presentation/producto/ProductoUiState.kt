@@ -1,8 +1,11 @@
 package pe.edu.upeu.pharmamobil.presentation.producto
 
+import pe.edu.upeu.pharmamobil.presentation.sincronizacion.SincronizacionUiState
+
 data class ProductoUiState(
     val fase: ProductoFase = ProductoFase.Cargando,
     val sinConexion: Boolean = false,
+    val syncState: SincronizacionUiState = SincronizacionUiState(),
     val nombre: String = "",
     val precio: String = "",
     val stock: String = "",

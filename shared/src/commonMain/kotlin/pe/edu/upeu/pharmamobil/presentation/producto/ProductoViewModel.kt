@@ -8,14 +8,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import pe.edu.upeu.pharmamobil.domain.permiso.GestorPermisos
 import pe.edu.upeu.pharmamobil.domain.platform.Compartidor
 import pe.edu.upeu.pharmamobil.domain.repository.ProductoRepository
 import pe.edu.upeu.pharmamobil.domain.usecase.RegistrarProductoUseCase
+import pe.edu.upeu.pharmamobil.domain.usecase.SincronizarUseCase
 
 class ProductoViewModel(
     private val repository: ProductoRepository,
     private val registrarProductoUseCase: RegistrarProductoUseCase,
+    private val sincronizarUseCase: SincronizarUseCase,
     private val compartidor: Compartidor,
+    val gestorPermisos: GestorPermisos,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProductoUiState())
@@ -23,6 +27,7 @@ class ProductoViewModel(
 
     init {
         observarProductosLocales()
+        observarResumenSync()
         sincronizarConServidor()
     }
 
@@ -41,11 +46,31 @@ class ProductoViewModel(
         }
     }
 
+    private fun observarResumenSync() {
+        viewModelScope.launch {
+            repository.observarResumenSync().collectLatest { resumen ->
+                _uiState.update { current ->
+                    current.copy(
+                        syncState = current.syncState.copy(
+                            pendientes = resumen.pendientes,
+                            fallidas = resumen.fallidas,
+                            ultimaSyncMs = resumen.ultimaSyncMs,
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
     fun sincronizarConServidor() {
         viewModelScope.launch {
-            val result = repository.sincronizar()
+            _uiState.update { it.copy(syncState = it.syncState.copy(sincronizando = true)) }
+            val result = sincronizarUseCase()
             _uiState.update {
-                it.copy(sinConexion = result.isFailure)
+                it.copy(
+                    sinConexion = result.isFailure,
+                    syncState = it.syncState.copy(sincronizando = false),
+                )
             }
         }
     }

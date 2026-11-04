@@ -4,6 +4,7 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import pe.edu.upeu.pharmamobil.data.firebase.TelemetriaLogger
 import pe.edu.upeu.pharmamobil.data.local.ProductoLocal
 import pe.edu.upeu.pharmamobil.data.remote.ProductoApi
 import pe.edu.upeu.pharmamobil.data.remote.dto.ProductoDto
@@ -47,7 +48,7 @@ class ProductoRepositorioOfflineTest {
         database = PharmaDb(driver)
         productoLocal = ProductoLocal(database)
         fakeApi = FakeProductoApi()
-        repository = ProductoRepositorioOffline(productoLocal, fakeApi)
+        repository = ProductoRepositorioOffline(productoLocal, fakeApi, TelemetriaLogger())
     }
 
     @Test

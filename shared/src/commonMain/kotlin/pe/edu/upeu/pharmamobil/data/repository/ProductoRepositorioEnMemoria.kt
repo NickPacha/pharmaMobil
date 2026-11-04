@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import pe.edu.upeu.pharmamobil.domain.model.Producto
+import pe.edu.upeu.pharmamobil.domain.model.ResumenSync
 import pe.edu.upeu.pharmamobil.domain.repository.ProductoRepository
 
 class ProductoRepositorioEnMemoria : ProductoRepository {
@@ -11,6 +12,8 @@ class ProductoRepositorioEnMemoria : ProductoRepository {
     private val _flow = MutableStateFlow<List<Producto>>(emptyList())
 
     override fun observar(): Flow<List<Producto>> = _flow.asStateFlow()
+
+    override fun observarResumenSync(): Flow<ResumenSync> = MutableStateFlow(ResumenSync())
 
     override suspend fun listar(): List<Producto> {
         return productos.toList()
