@@ -1,21 +1,30 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# =====================================================================
+# Reglas de ProGuard / R8 para PharmaMobil (Modo Release)
+# Cumplimiento de especificación RES-MIN-01 y RNF-02
+# =====================================================================
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# 1. Conservar DTOs y modelos de serialización (kotlinx.serialization)
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
+-keep,allowobfuscation,allowshrinking class * kotlinx.serialization.Serializer
+-keepclassmembers class * {
+    @kotlinx.serialization.SerialName <fields>;
+}
+-keep class pe.edu.upeu.pharmamobil.data.remote.dto.** { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# 2. Conservar módulos de Inyección de Dependencias con Koin
+-keep class pe.edu.upeu.pharmamobil.di.** { *; }
+-keepclassmembers class * {
+    @org.koin.core.annotation.* <methods>;
+}
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# 3. Conservar modelos del dominio y base de datos local SQLDelight
+-keep class pe.edu.upeu.pharmamobil.domain.model.** { *; }
+-keep class pe.edu.upeu.pharmamobil.db.** { *; }
+-keep class app.cash.sqldelight.** { *; }
+
+# 4. Conservar bibliotecas de red Ktor y Coroutines
+-keep class io.ktor.** { *; }
+-keep class kotlinx.coroutines.** { *; }
+
+# 5. Soporte para Compose Multiplatform
+-keep class androidx.compose.** { *; }
