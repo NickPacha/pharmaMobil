@@ -13,10 +13,21 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import pe.edu.upeu.pharmamobil.domain.repository.AlmacenSeguro
 
-fun crearHttpClient(almacenSeguro: AlmacenSeguro): HttpClient {
+/**
+ * Configuración dinámica de red para dar soporte a dispositivos físicos en red local (RF-CON-01)
+ */
+object NetworkConfig {
+    // Por defecto apunta a emulador (10.0.2.2:8080); en hardware real se asigna la IP local (ej: http://192.168.1.100:8080/)
+    var baseUrl: String = "http://10.0.2.2:8080/"
+}
+
+fun crearHttpClient(
+    almacenSeguro: AlmacenSeguro,
+    baseUrl: String = NetworkConfig.baseUrl,
+): HttpClient {
     return HttpClient {
         defaultRequest {
-            url("http://10.0.2.2:8080/")
+            url(baseUrl)
         }
 
         install(ContentNegotiation) {
