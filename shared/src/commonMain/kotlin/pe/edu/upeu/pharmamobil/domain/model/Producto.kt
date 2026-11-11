@@ -5,7 +5,8 @@ data class Producto(
     val nombre: String,
     val precio: Double,
     val stock: Int,
-    val activo: Boolean = true
+    val activo: Boolean = true,
+    val esPendiente: Boolean = false,
 ) {
     companion object {
         const val STOCK_MINIMO = 5

@@ -28,6 +28,7 @@ class ProductoLocal(database: PharmaDb) {
                         nombre = it.nombre,
                         precio = it.precio,
                         stock = it.stock.toInt(),
+                        esPendiente = (it.pendiente == 1L) || (it.id < 0),
                     )
                 }
             }
@@ -37,7 +38,7 @@ class ProductoLocal(database: PharmaDb) {
         val minId = queries.siguienteIdLocal().executeAsOne()
         val nuevoIdLocal = if (minId < 0) minId - 1 else -1L
 
-        val productoConId = producto.copy(id = nuevoIdLocal)
+        val productoConId = producto.copy(id = nuevoIdLocal, esPendiente = true)
         queries.insertar(
             id = productoConId.id,
             nombre = productoConId.nombre,
@@ -57,6 +58,7 @@ class ProductoLocal(database: PharmaDb) {
                 nombre = it.nombre,
                 precio = it.precio,
                 stock = it.stock.toInt(),
+                esPendiente = true,
             )
         }
     }
@@ -67,6 +69,10 @@ class ProductoLocal(database: PharmaDb) {
 
     fun observarCantidadFallidas(maxIntentos: Long = MAX_INTENTOS): Flow<Long> {
         return queries.contarFallidas(maxIntentos).asFlow().mapToOne(Dispatchers.IO)
+    }
+
+    fun resetearIntentos() {
+        queries.resetearIntentos()
     }
 
     fun sumarIntento(id: Long, errorMsg: String) {

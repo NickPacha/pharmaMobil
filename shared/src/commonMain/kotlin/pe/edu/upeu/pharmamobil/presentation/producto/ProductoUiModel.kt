@@ -10,6 +10,7 @@ data class ProductoUiModel(
     val precioFormateado: String,
     val stock: Int,
     val requiereReposicion: Boolean,
+    val esPendiente: Boolean,
     val productoOriginal: Producto,
 )
 
@@ -20,5 +21,6 @@ fun Producto.toUi(): ProductoUiModel = ProductoUiModel(
     precioFormateado = formatearSoles(precio),
     stock = stock,
     requiereReposicion = requiereReposicion,
+    esPendiente = esPendiente || (id < 0),
     productoOriginal = this,
 )

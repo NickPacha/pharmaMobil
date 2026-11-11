@@ -47,6 +47,7 @@ import pe.edu.upeu.pharmamobil.presentation.inicio.InicioScreen
 import pe.edu.upeu.pharmamobil.presentation.login.LoginScreen
 import pe.edu.upeu.pharmamobil.presentation.login.LoginViewModel
 import pe.edu.upeu.pharmamobil.presentation.pedido.PedidoScreen
+import pe.edu.upeu.pharmamobil.presentation.pedido.PedidoViewModel
 import pe.edu.upeu.pharmamobil.presentation.producto.ProductoScreen
 import pe.edu.upeu.pharmamobil.presentation.producto.ProductoViewModel
 import pe.edu.upeu.pharmamobil.theme.PharmaMobilTheme
@@ -213,7 +214,8 @@ fun App() {
                             }
                             Screen.Pedidos -> {
                                 Column(modifier = Modifier.padding(paddingValues)) {
-                                    PedidoScreen()
+                                    val viewModel = koinViewModel<PedidoViewModel>()
+                                    PedidoScreen(viewModel = viewModel)
                                 }
                             }
                         }

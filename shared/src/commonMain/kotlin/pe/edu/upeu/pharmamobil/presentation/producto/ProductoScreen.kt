@@ -73,14 +73,19 @@ fun ProductoScreen(
         }
 
         // UX-01: Panel de Estado de Sincronización
-        if (uiState.syncState.pendientes > 0) {
+        if ((uiState.syncState.pendientes > 0) || uiState.sinConexion) {
             Surface(
                 color = MaterialTheme.colorScheme.secondaryContainer,
                 shape = MaterialTheme.shapes.small,
                 modifier = Modifier.fillMaxWidth(),
             ) {
+                val textoEstado = if (uiState.syncState.pendientes > 0) {
+                    "Modo Offline: ${uiState.syncState.pendientes} cambio(s) pendiente(s) por sincronizar"
+                } else {
+                    "Sin conexión: mostrando datos guardados localmente"
+                }
                 Text(
-                    text = "Sin conexión: ${uiState.syncState.pendientes} cambios por enviar",
+                    text = textoEstado,
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(8.dp),
@@ -95,7 +100,7 @@ fun ProductoScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
-                    text = "${uiState.syncState.fallidas} registros no se pudieron enviar. Toca para revisar",
+                    text = "${uiState.syncState.fallidas} registro(s) con error al enviar",
                     color = MaterialTheme.colorScheme.onErrorContainer,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(8.dp),
@@ -216,7 +221,27 @@ fun ListaProductosConTabs(
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
             items(productosFiltrados) { producto ->
                 ListItem(
-                    headlineContent = { Text(producto.nombre) },
+                    headlineContent = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text(producto.nombre)
+                            if (producto.esPendiente) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                                    shape = MaterialTheme.shapes.extraSmall,
+                                ) {
+                                    Text(
+                                        text = "Pendiente (Offline)",
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    )
+                                }
+                            }
+                        }
+                    },
                     supportingContent = {
                         Text("Precio: ${producto.precioFormateado} | Stock: ${producto.stock}")
                     },

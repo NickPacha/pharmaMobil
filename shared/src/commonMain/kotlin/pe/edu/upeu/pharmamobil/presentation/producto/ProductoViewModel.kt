@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -33,32 +34,38 @@ class ProductoViewModel(
 
     private fun observarProductosLocales() {
         viewModelScope.launch {
-            repository.observar().collectLatest { lista ->
-                val uiList = lista.map { it.toUi() }
-                _uiState.update {
-                    if (uiList.isEmpty()) {
-                        it.copy(fase = ProductoFase.SinProductos)
-                    } else {
-                        it.copy(fase = ProductoFase.ConProductos(uiList))
+            repository.observar()
+                .catch { e ->
+                    _uiState.update { it.copy(fase = ProductoFase.Error("Error al cargar productos locales: ${e.message}")) }
+                }
+                .collectLatest { lista ->
+                    val uiList = lista.map { it.toUi() }
+                    _uiState.update {
+                        if (uiList.isEmpty()) {
+                            it.copy(fase = ProductoFase.SinProductos)
+                        } else {
+                            it.copy(fase = ProductoFase.ConProductos(uiList))
+                        }
                     }
                 }
-            }
         }
     }
 
     private fun observarResumenSync() {
         viewModelScope.launch {
-            repository.observarResumenSync().collectLatest { resumen ->
-                _uiState.update { current ->
-                    current.copy(
-                        syncState = current.syncState.copy(
-                            pendientes = resumen.pendientes,
-                            fallidas = resumen.fallidas,
-                            ultimaSyncMs = resumen.ultimaSyncMs,
-                        ),
-                    )
+            repository.observarResumenSync()
+                .catch { }
+                .collectLatest { resumen ->
+                    _uiState.update { current ->
+                        current.copy(
+                            syncState = current.syncState.copy(
+                                pendientes = resumen.pendientes,
+                                fallidas = resumen.fallidas,
+                                ultimaSyncMs = resumen.ultimaSyncMs,
+                            ),
+                        )
+                    }
                 }
-            }
         }
     }
 

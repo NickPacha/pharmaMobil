@@ -14,8 +14,6 @@ import pe.edu.upeu.pharmamobil.domain.model.ResultadoEnvio
 import pe.edu.upeu.pharmamobil.domain.model.ResumenSync
 import pe.edu.upeu.pharmamobil.domain.port.Telemetria
 import pe.edu.upeu.pharmamobil.domain.repository.ProductoRepository
-import kotlin.math.min
-import kotlin.math.pow
 
 class ProductoRepositorioOffline(
     private val productoLocal: ProductoLocal,
@@ -57,6 +55,9 @@ class ProductoRepositorioOffline(
 
     override suspend fun sincronizar(): Result<Unit> {
         return runCatching {
+            // Resetear recuento de intentos para permitir reintento en sincronización manual
+            productoLocal.resetearIntentos()
+
             // RF-SYNC-05 & RN-INT-03: Subir pendientes antes de descargar
             subirPendientesConReintento()
 
@@ -102,13 +103,10 @@ class ProductoRepositorioOffline(
                 val clasificado = clasificarError(e)
                 when (clasificado) {
                     is ResultadoEnvio.Transitorio -> {
-                        // RF-SYNC-03: Incrementar intento, retardo exponencial
                         productoLocal.sumarIntento(p.id, clasificado.mensaje)
-                        val retardoSegundos = min(2.0.pow(1.0).toLong(), 16L)
-                        delay(retardoSegundos * 1000L)
+                        delay(200L)
                     }
                     is ResultadoEnvio.Permanente -> {
-                        // RF-SYNC-04: Marcar fallida inmediatamente
                         productoLocal.marcarFallido(p.id, clasificado.mensaje)
                     }
                 }

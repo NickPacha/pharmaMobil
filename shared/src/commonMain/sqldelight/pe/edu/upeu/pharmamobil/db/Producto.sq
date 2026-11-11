@@ -20,6 +20,9 @@ SELECT COUNT(*) FROM producto WHERE pendiente = 1 AND intentos < :maxIntentos;
 contarFallidas:
 SELECT COUNT(*) FROM producto WHERE pendiente = 1 AND intentos >= :maxIntentos;
 
+resetearIntentos:
+UPDATE producto SET intentos = 0, ultimoError = NULL WHERE pendiente = 1;
+
 insertar:
 INSERT OR REPLACE INTO producto (id, nombre, precio, stock, pendiente, intentos, ultimoError)
 VALUES (?, ?, ?, ?, ?, ?, ?);
